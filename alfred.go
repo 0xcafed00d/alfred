@@ -1,20 +1,28 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
+	//"fmt"
 	"github.com/davecgh/go-spew/spew"
 	"io/ioutil"
 	"net/http"
 )
 
 func githubnotify(w http.ResponseWriter, r *http.Request) {
-	spew.Dump(r)
-
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		spew.Dump(err)
+		return
 	}
-	fmt.Println(string(data))
+
+	payload := GithubPayload{}
+	err = json.Unmarshal(data, &payload)
+	if err != nil {
+		spew.Dump(err)
+		return
+	}
+
+	spew.Dump(payload)
 }
 
 func main() {
