@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	//"fmt"
+	"fmt"
 	"github.com/davecgh/go-spew/spew"
 	"io/ioutil"
 	"net/http"
@@ -15,6 +15,9 @@ func githubnotify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	event := r.Header.Get("X-Github-Event")
+	sig := r.Header.Get("X-Hub-Signature")
+
 	payload := GithubPayload{}
 	err = json.Unmarshal(data, &payload)
 	if err != nil {
@@ -22,7 +25,12 @@ func githubnotify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	spew.Dump(payload)
+	name := payload.Repository.Description
+	url := payload.Repository.URL
+
+	fmt.Println(event, sig, name, url)
+
+	//spew.Dump(payload)
 }
 
 func main() {
