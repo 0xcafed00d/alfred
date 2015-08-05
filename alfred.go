@@ -1,17 +1,30 @@
 package main
 
 import (
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"strings"
 )
+
+func CheckMAC(message, messageMAC, key []byte) bool {
+	mac := hmac.New(sha1.New, key)
+	mac.Write(message)
+	expectedMAC := mac.Sum(nil)
+	return hmac.Equal(messageMAC, expectedMAC)
+}
+
+var secretKey []byte
 
 func githubnotify(w http.ResponseWriter, r *http.Request) {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		spew.Dump(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -21,7 +34,23 @@ func githubnotify(w http.ResponseWriter, r *http.Request) {
 	payload := GithubPayload{}
 	err = json.Unmarshal(data, &payload)
 	if err != nil {
-		spew.Dump(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if strings.HasPrefix(sig, "sha1=") {
+		sigBytes, err := hex.DecodeString(sig[len("sha1="):])
+		if err != nil {
+			http.Error(w, "Invalid X-Hub-Signature: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if !CheckMAC(data, sigBytes, secretKey) {
+			http.Error(w, "", http.StatusUnauthorized)
+			return
+		}
+	} else {
+		http.Error(w, "Invalid X-Hub-Signature", http.StatusBadRequest)
 		return
 	}
 
@@ -29,11 +58,14 @@ func githubnotify(w http.ResponseWriter, r *http.Request) {
 	url := payload.Repository.URL
 
 	fmt.Println(event, sig, name, url)
-
-	//spew.Dump(payload)
 }
 
 func main() {
+	secretKey = []byte(os.Getenv("GITHUBSECRET"))
+	if len(secretKey) == 0 {
+		panic("GITHUBSECRET environment variable not set")
+	}
+
 	http.HandleFunc("/githubnotify/", githubnotify)
 	http.ListenAndServe(":8080", nil)
 }
