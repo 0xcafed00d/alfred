@@ -9,55 +9,52 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strings"
+	//	"strings"
 )
-
-func CheckMAC(message, messageMAC, key []byte) bool {
-	mac := hmac.New(sha1.New, key)
-	mac.Write(message)
-	expectedMAC := mac.Sum(nil)
-	return hmac.Equal(messageMAC, expectedMAC)
-}
 
 var secretKey []byte
 
-func githubnotify(w http.ResponseWriter, r *http.Request) {
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	event := r.Header.Get("X-Github-Event")
+func verifyHMAC(w http.ResponseWriter, r *http.Request, body []byte) bool {
 	sig := r.Header.Get("X-Hub-Signature")
 
-	payload := GithubPayload{}
-	err = json.Unmarshal(data, &payload)
+	mac := hmac.New(sha1.New, secretKey)
+	mac.Write(body)
+	expectedMAC := "sha1=" + hex.EncodeToString(mac.Sum(nil))
+	equal := hmac.Equal([]byte(sig), []byte(expectedMAC))
+
+	if !equal {
+		http.Error(w, "X-Hub-Signature Mismatch", http.StatusUnauthorized)
+	}
+
+	return equal
+}
+
+func githubnotify(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if strings.HasPrefix(sig, "sha1=") {
-		sigBytes, err := hex.DecodeString(sig[len("sha1="):])
-		if err != nil {
-			http.Error(w, "Invalid X-Hub-Signature: "+err.Error(), http.StatusBadRequest)
-			return
-		}
+	if r.Header.Get("X-Github-Event") != "push" {
+		return
+	}
 
-		if !CheckMAC(data, sigBytes, secretKey) {
-			http.Error(w, "", http.StatusUnauthorized)
-			return
-		}
-	} else {
-		http.Error(w, "Invalid X-Hub-Signature", http.StatusBadRequest)
+	if !verifyHMAC(w, r, body) {
+		return
+	}
+
+	payload := GithubPayload{}
+	err = json.Unmarshal(body, &payload)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	name := payload.Repository.Description
 	url := payload.Repository.URL
+	fmt.Println(name, url)
 
-	fmt.Println(event, sig, name, url)
 }
 
 func main() {
