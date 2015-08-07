@@ -1,6 +1,6 @@
 package main
 
-type GithubPayload struct {
+type GitHubPayload struct {
 	After   string `json:"after"`
 	BaseRef string `json:"base_ref"`
 	Before  string `json:"before"`
