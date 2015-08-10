@@ -40,11 +40,13 @@ func execWithTimeout(proc, args string, env []string, out io.Writer, timeout tim
 		c <- cmd.Run()
 	}(c)
 
-	err := <-c
+	timeoutChan := time.NewTimer(timeout)
 
-	if err != nil {
+	select {
+	case err := <-c:
 		return err
+	case <-timeoutChan.C:
+		cmd.Process.Kill()
+		return nil
 	}
-
-	return nil
 }
