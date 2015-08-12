@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -29,11 +30,19 @@ func split(s, charset string) []string {
 	return res
 }
 
-func execWithTimeout(proc, args string, env []string, out io.Writer, timeout time.Duration) error {
+func execWithTimeout(proc, args, gopath string, out io.Writer, timeout time.Duration) error {
 
 	cmd := exec.Command(proc, split(args, " \t")...)
 	cmd.Stdout = out
 	cmd.Stderr = out
+
+	for _, evar := range os.Environ() {
+		if strings.HasPrefix(evar, "GOPATH=") {
+			cmd.Env = append(cmd.Env, "GOPATH="+gopath)
+		} else {
+			cmd.Env = append(cmd.Env, evar)
+		}
+	}
 
 	c := make(chan error)
 	go func(c chan error) {
