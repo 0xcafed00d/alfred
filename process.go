@@ -1,7 +1,7 @@
 package main
 
 import (
-	"error"
+	"errors"
 	"io"
 	"os"
 	"os/exec"
