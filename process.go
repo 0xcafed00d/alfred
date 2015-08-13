@@ -1,6 +1,7 @@
 package main
 
 import (
+	"error"
 	"io"
 	"os"
 	"os/exec"
@@ -30,6 +31,8 @@ func split(s, charset string) []string {
 	return res
 }
 
+var ErrTimeout = errors.New("exec timeput")
+
 func execWithTimeout(proc, args, gopath string, out io.Writer, timeout time.Duration) error {
 
 	cmd := exec.Command(proc, split(args, " \t")...)
@@ -56,6 +59,6 @@ func execWithTimeout(proc, args, gopath string, out io.Writer, timeout time.Dura
 		return err
 	case <-timeoutChan.C:
 		cmd.Process.Kill()
-		return nil
+		return ErrTimeout
 	}
 }
