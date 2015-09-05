@@ -5,4 +5,4 @@ go:
 
 install:
   - go get -v github.com/simulatedsimian/gocmdutil/dummyproc
-  - go get -v github.com/simulatedsimian/alfred
+  - go get -v -t github.com/simulatedsimian/alfred
