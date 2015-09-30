@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -34,6 +35,8 @@ func split(s, charset string) []string {
 var ErrTimeout = errors.New("exec timeput")
 
 func execWithTimeout(proc, args, gopath string, out io.Writer, timeout time.Duration) error {
+
+	fmt.Fprintf(out, ">%s %s\n", proc, args)
 
 	cmd := exec.Command(proc, split(args, " \t")...)
 	cmd.Stdout = out

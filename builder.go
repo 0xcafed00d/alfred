@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha1"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -23,69 +24,62 @@ func generatePackageHash(pkg string) string {
 	return fmt.Sprintf("%x", sha1.Sum([]byte(pkg)))
 }
 
+func makePaths(pkg, logfile string) (gopath string, logwriter io.WriteCloser, err error) {
+
+	gopath, err = filepath.Abs(generatePackageHash(pkg))
+	if err != nil {
+		return
+	}
+
+	logwriter, err = os.Create(filepath.Join(gopath, logfile))
+	if err != nil {
+		return
+	}
+
+	return
+}
+
 func goget(pkg, logfile string) error {
 
-	gopath := generatePackageHash(pkg)
-
-	err := os.MkdirAll(gopath, os.ModePerm)
+	err := os.MkdirAll(generatePackageHash(pkg), os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	gopath, err = filepath.Abs(gopath)
+	gopath, logwriter, err := makePaths(pkg, logfile)
 	if err != nil {
 		return err
 	}
+	defer logwriter.Close()
 
-	log, err := os.Create(filepath.Join(gopath, logfile))
-	if err != nil {
-		return err
-	}
-	defer log.Close()
-
-	err = execWithTimeout("go", "get -v -u -t "+pkg+"/...", gopath, log, 300*time.Second)
-	return err
+	return execWithTimeout("go", "get -v -u -t "+pkg+"/...", gopath, logwriter, 300*time.Second)
 }
 
 func gotest(pkg, logfile string) error {
 
-	gopath := generatePackageHash(pkg)
-	gopath, err := filepath.Abs(gopath)
+	gopath, logwriter, err := makePaths(pkg, logfile)
 	if err != nil {
 		return err
 	}
-
-	log, err := os.Create(filepath.Join(gopath, logfile))
-	if err != nil {
-		return err
-	}
-	defer log.Close()
+	defer logwriter.Close()
 
 	coverdata := filepath.Join(gopath, "coverdata.out")
 
 	args := fmt.Sprintf("test -v -covermode=count -coverprofile=%s %s", coverdata, pkg)
-	err = execWithTimeout("go", args, gopath, log, 300*time.Second)
-	return err
+	return execWithTimeout("go", args, gopath, logwriter, 300*time.Second)
 }
 
 func gocover(pkg, logfile string) error {
 
-	gopath := generatePackageHash(pkg)
-	gopath, err := filepath.Abs(gopath)
+	gopath, logwriter, err := makePaths(pkg, logfile)
 	if err != nil {
 		return err
 	}
-
-	log, err := os.Create(filepath.Join(gopath, logfile))
-	if err != nil {
-		return err
-	}
-	defer log.Close()
+	defer logwriter.Close()
 
 	coverdata := filepath.Join(gopath, "coverdata.out")
 	html := filepath.Join(gopath, "coverdata.html")
 
 	args := fmt.Sprintf("tool cover -html=%s -o %s", coverdata, html)
-	err = execWithTimeout("go", args, gopath, log, 300*time.Second)
-	return err
+	return execWithTimeout("go", args, gopath, logwriter, 300*time.Second)
 }
