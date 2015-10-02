@@ -1,85 +1,46 @@
 package main
 
 import (
-	"crypto/sha1"
-	"fmt"
-	"io"
-	"os"
-	"path/filepath"
-	"time"
+	//"fmt"
+	"log"
 )
 
-type KnownRepos struct {
-	url string
+type BuildQueue struct {
+	queue chan string
 }
 
-func builder(repos <-chan string) {
+func MakeBuildQueue() *BuildQueue {
+	bq := BuildQueue{}
+	bq.queue = make(chan string, 100)
+	go builder(bq.queue)
+	return &bq
+}
+
+func (bq *BuildQueue) EnQueue(pkg string) {
+	bq.queue <- pkg
+}
+
+func builder(queue <-chan string) {
 	for {
-		repo := <-repos
-		fmt.Println(repo)
+		pkg := <-queue
+
+		log.Println("Processing Package: ", pkg)
+
+		var err error
+		err = goget(pkg, "build.log")
+		if err == nil {
+			log.Println(" Running Tests on: ", pkg)
+			err = gotest(pkg, "test.log")
+		}
+		if err == nil {
+			log.Println(" Processing Coverage on: ", pkg)
+			err = gotest(pkg, "cover.log")
+		}
+
+		if err == nil {
+			log.Println(" Done")
+		} else {
+			log.Println(" Error: ", err)
+		}
 	}
-}
-
-func generatePackageHash(pkg string) string {
-	return fmt.Sprintf("%x", sha1.Sum([]byte(pkg)))
-}
-
-func makePaths(pkg, logfile string) (gopath string, logwriter io.WriteCloser, err error) {
-
-	gopath, err = filepath.Abs(generatePackageHash(pkg))
-	if err != nil {
-		return
-	}
-
-	logwriter, err = os.Create(filepath.Join(gopath, logfile))
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-func goget(pkg, logfile string) error {
-
-	err := os.MkdirAll(generatePackageHash(pkg), os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	gopath, logwriter, err := makePaths(pkg, logfile)
-	if err != nil {
-		return err
-	}
-	defer logwriter.Close()
-
-	return execWithTimeout("go", "get -v -u -t "+pkg+"/...", gopath, logwriter, 300*time.Second)
-}
-
-func gotest(pkg, logfile string) error {
-
-	gopath, logwriter, err := makePaths(pkg, logfile)
-	if err != nil {
-		return err
-	}
-	defer logwriter.Close()
-
-	coverdata := filepath.Join(gopath, "coverdata.out")
-
-	args := fmt.Sprintf("test -v -covermode=count -coverprofile=%s %s", coverdata, pkg)
-	return execWithTimeout("go", args, gopath, logwriter, 300*time.Second)
-}
-
-func gocover(pkg, logfile string) error {
-
-	gopath, logwriter, err := makePaths(pkg, logfile)
-	if err != nil {
-		return err
-	}
-	defer logwriter.Close()
-
-	coverdata := filepath.Join(gopath, "coverdata.out")
-	html := filepath.Join(gopath, "coverdata.html")
-
-	args := fmt.Sprintf("tool cover -html=%s -o %s", coverdata, html)
-	return execWithTimeout("go", args, gopath, logwriter, 300*time.Second)
 }

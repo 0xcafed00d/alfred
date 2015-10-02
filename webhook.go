@@ -10,8 +10,8 @@ import (
 )
 
 type GitHubWebHook struct {
-	secretKey   []byte
-	builderChan chan string
+	secretKey []byte
+	queuer    BuildQueuer
 }
 
 func (wh *GitHubWebHook) verifyHMAC(w http.ResponseWriter, r *http.Request, body []byte) bool {
@@ -49,6 +49,6 @@ func (wh *GitHubWebHook) notify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		wh.builderChan <- payload.Repository.URL
+		wh.queuer.EnQueue(payload.Repository.URL)
 	}
 }
