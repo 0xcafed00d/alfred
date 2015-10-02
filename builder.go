@@ -34,7 +34,7 @@ func builder(queue <-chan string) {
 		}
 		if err == nil {
 			log.Println(" Processing Coverage on: ", pkg)
-			err = gotest(pkg, "cover.log")
+			err = gocover(pkg, "cover.log")
 		}
 
 		if err == nil {
