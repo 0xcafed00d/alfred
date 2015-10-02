@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 type GitHubWebHook struct {
@@ -49,6 +50,8 @@ func (wh *GitHubWebHook) notify(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		wh.queuer.EnQueue(payload.Repository.URL)
+		pkg := strings.TrimPrefix(payload.Repository.URL, "https://")
+
+		wh.queuer.EnQueue(pkg)
 	}
 }
