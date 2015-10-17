@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha1"
 	"fmt"
+	"github.com/simulatedsimian/meh"
 	"io"
 	"os"
 	"path/filepath"
@@ -14,34 +15,37 @@ func generatePackageHash(pkg string) string {
 }
 
 func makePaths(pkg, logfile string) (gopath string, logwriter io.WriteCloser, err error) {
+	defer meh.SetOnError(&err)
 
 	gopath, err = filepath.Abs(generatePackageHash(pkg))
-	if err != nil {
-		return
-	}
+	meh.ReturnError(err)
 
 	logwriter, err = os.Create(filepath.Join(gopath, logfile))
-	if err != nil {
-		return
-	}
+	meh.ReturnError(err)
 
 	return
 }
 
-func goget(pkg, logfile string) error {
+func goget(pkg, logfile string) (err error) {
+	defer meh.SetOnError(&err)
 
-	err := os.MkdirAll(generatePackageHash(pkg), os.ModePerm)
-	if err != nil {
-		return err
-	}
+	err = os.MkdirAll(generatePackageHash(pkg), os.ModePerm)
+	meh.ReturnError(err)
 
 	gopath, logwriter, err := makePaths(pkg, logfile)
-	if err != nil {
-		return err
-	}
+	meh.ReturnError(err)
 	defer logwriter.Close()
 
-	return execWithTimeout("go", "get -v -u -t "+pkg+"/...", gopath, logwriter, 300*time.Second)
+	err = execWithTimeout("go", "version", gopath, logwriter, 300*time.Second)
+	meh.ReturnError(err)
+
+	err = execWithTimeout("go", "env", gopath, logwriter, 300*time.Second)
+	meh.ReturnError(err)
+
+	err = execWithTimeout("go", "get -v -u -t "+pkg+"/...", gopath, logwriter, 300*time.Second)
+	meh.ReturnError(err)
+
+	return
 }
 
 func gotest(pkg, logfile string) error {

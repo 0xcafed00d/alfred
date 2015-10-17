@@ -27,8 +27,8 @@ func builder(queue <-chan string) {
 
 		run := func(f func(pkg, logfile string) error, logfile, logmsg string) {
 			if err == nil {
-				err = f(pkg, logfile)
 				log.Println(logmsg, pkg)
+				err = f(pkg, logfile)
 			}
 		}
 
