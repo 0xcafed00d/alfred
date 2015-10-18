@@ -18,7 +18,21 @@ func exitOnError(err error) {
 	}
 }
 
+func runCommand(cmd string, args []string) {
+	fmt.Println(cmd, args)
+}
+
 func main() {
+	secretKey := []byte(os.Getenv("GITHUBSECRET"))
+	if len(secretKey) == 0 {
+		exitOnError(errors.New("GITHUBSECRET environment variable not set"))
+	}
+
+	if len(os.Args) > 1 {
+		runCommand(os.Args[1], os.Args[2:])
+		return
+	}
+
 	finfo, err := os.Stat("data")
 	if err == nil {
 		if !finfo.IsDir() {
@@ -31,11 +45,6 @@ func main() {
 
 	err = os.Chdir("data")
 	exitOnError(err)
-
-	secretKey := []byte(os.Getenv("GITHUBSECRET"))
-	if len(secretKey) == 0 {
-		exitOnError(errors.New("GITHUBSECRET environment variable not set"))
-	}
 
 	webhook := GitHubWebHook{
 		secretKey: secretKey,
