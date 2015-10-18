@@ -16,7 +16,9 @@ func TestPkgHash(t *testing.T) {
 }
 
 func TestGoGet(t *testing.T) {
-	assert.NoError(t, assert.Pack(goget("github.com/simulatedsimian/assert", "buildlog")))
-	assert.NoError(t, assert.Pack(gotest("github.com/simulatedsimian/assert", "testlog")))
-	assert.NoError(t, assert.Pack(gocover("github.com/simulatedsimian/assert", "coverlog")))
+	var binfo BuildInfo
+
+	assert.NoError(t, assert.Pack(goget("github.com/simulatedsimian/assert", "buildlog", &binfo)))
+	assert.NoError(t, assert.Pack(gotest("github.com/simulatedsimian/assert", "testlog", &binfo)))
+	assert.NoError(t, assert.Pack(gocover("github.com/simulatedsimian/assert", "coverlog", &binfo)))
 }

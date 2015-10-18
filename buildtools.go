@@ -26,7 +26,7 @@ func makePaths(pkg, logfile string) (gopath string, logwriter io.WriteCloser, er
 	return
 }
 
-func goget(pkg, logfile string) (err error) {
+func goget(pkg, logfile string, binfo *BuildInfo) (err error) {
 	defer meh.SetOnError(&err)
 
 	err = os.MkdirAll(generatePackageHash(pkg), os.ModePerm)
@@ -36,10 +36,10 @@ func goget(pkg, logfile string) (err error) {
 	meh.ReturnError(err)
 	defer logwriter.Close()
 
-	err = execWithTimeout("go", "version", gopath, logwriter, 300*time.Second)
+	err = execute("go", "version", gopath, logwriter)
 	meh.ReturnError(err)
 
-	err = execWithTimeout("go", "env", gopath, logwriter, 300*time.Second)
+	err = execute("go", "env", gopath, logwriter)
 	meh.ReturnError(err)
 
 	err = execWithTimeout("go", "get -v -u -t "+pkg+"/...", gopath, logwriter, 300*time.Second)
@@ -48,7 +48,7 @@ func goget(pkg, logfile string) (err error) {
 	return
 }
 
-func gotest(pkg, logfile string) error {
+func gotest(pkg, logfile string, binfo *BuildInfo) error {
 
 	gopath, logwriter, err := makePaths(pkg, logfile)
 	if err != nil {
@@ -62,7 +62,7 @@ func gotest(pkg, logfile string) error {
 	return execWithTimeout("go", args, gopath, logwriter, 300*time.Second)
 }
 
-func gocover(pkg, logfile string) error {
+func gocover(pkg, logfile string, binfo *BuildInfo) error {
 
 	gopath, logwriter, err := makePaths(pkg, logfile)
 	if err != nil {

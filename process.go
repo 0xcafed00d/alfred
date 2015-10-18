@@ -66,3 +66,23 @@ func execWithTimeout(proc, args, gopath string, out io.Writer, timeout time.Dura
 		return ErrTimeout
 	}
 }
+
+func execute(proc, args, gopath string, out io.Writer) error {
+
+	fmt.Fprintf(out, ">%s %s\n", proc, args)
+	defer fmt.Fprintln(out)
+
+	cmd := exec.Command(proc, split(args, " \t")...)
+	cmd.Stdout = out
+	cmd.Stderr = out
+
+	for _, evar := range os.Environ() {
+		if strings.HasPrefix(evar, "GOPATH=") {
+			cmd.Env = append(cmd.Env, "GOPATH="+gopath)
+		} else {
+			cmd.Env = append(cmd.Env, evar)
+		}
+	}
+
+	return cmd.Run()
+}

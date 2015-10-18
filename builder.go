@@ -20,26 +20,33 @@ func (bq *BuildQueue) EnQueue(pkg string) {
 	bq.queue <- pkg
 }
 
+type BuildInfo struct {
+}
+
+func buildPackage(pkg string) (binfo BuildInfo, err error) {
+
+	log.Println("Processing Package:", pkg)
+	err = goget(pkg, "build.log", &binfo)
+
+	log.Println(" Running Tests on:", pkg)
+	err = gotest(pkg, "test.log", &binfo)
+
+	log.Println(" Processing Coverage on:", pkg)
+	err = gocover(pkg, "cover.log", &binfo)
+
+	return
+}
+
 func builder(queue <-chan string) {
 	for {
 		pkg := <-queue
-		var err error
 
-		run := func(f func(pkg, logfile string) error, logfile, logmsg string) {
-			if err == nil {
-				log.Println(logmsg, pkg)
-				err = f(pkg, logfile)
-			}
-		}
-
-		run(goget, "build.log", "Processing Package:")
-		run(gotest, "test.log", " Running Tests on:")
-		run(gocover, "cover.log", " Processing Coverage on:")
+		binfo, err := buildPackage(pkg)
 
 		if err == nil {
-			log.Println(" Done")
+			log.Println(" Done", binfo)
 		} else {
-			log.Println(" Error: ", err)
+			log.Println(" Error: ", err, binfo)
 		}
 	}
 }
