@@ -45,34 +45,44 @@ func goget(pkg, logfile string, binfo *BuildInfo) (err error) {
 	err = execWithTimeout("go", "get -v -u -t "+pkg+"/...", gopath, logwriter, 300*time.Second)
 	meh.ReturnError(err)
 
+	binfo.BuildOK = true
+
 	return
 }
 
-func gotest(pkg, logfile string, binfo *BuildInfo) error {
+func gotest(pkg, logfile string, binfo *BuildInfo) (err error) {
+	defer meh.SetOnError(&err)
 
 	gopath, logwriter, err := makePaths(pkg, logfile)
-	if err != nil {
-		return err
-	}
+	meh.ReturnError(err)
 	defer logwriter.Close()
 
 	coverdata := filepath.Join(gopath, "coverdata.out")
 
 	args := fmt.Sprintf("test -v -covermode=count -coverprofile=%s %s", coverdata, pkg)
-	return execWithTimeout("go", args, gopath, logwriter, 300*time.Second)
+	err = execWithTimeout("go", args, gopath, logwriter, 300*time.Second)
+	meh.ReturnError(err)
+
+	binfo.TestOK = true
+
+	return
 }
 
-func gocover(pkg, logfile string, binfo *BuildInfo) error {
+func gocover(pkg, logfile string, binfo *BuildInfo) (err error) {
+	defer meh.SetOnError(&err)
 
 	gopath, logwriter, err := makePaths(pkg, logfile)
-	if err != nil {
-		return err
-	}
+	meh.ReturnError(err)
 	defer logwriter.Close()
 
 	coverdata := filepath.Join(gopath, "coverdata.out")
 	html := filepath.Join(gopath, "coverdata.html")
 
 	args := fmt.Sprintf("tool cover -html=%s -o %s", coverdata, html)
-	return execWithTimeout("go", args, gopath, logwriter, 300*time.Second)
+	err = execWithTimeout("go", args, gopath, logwriter, 300*time.Second)
+	meh.ReturnError(err)
+
+	binfo.CoverageOK = true
+
+	return
 }

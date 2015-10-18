@@ -38,6 +38,7 @@ func (wh *GitHubWebHook) notify(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		r.Body.Close()
 
 		if !wh.verifyHMAC(w, r, body) {
 			return

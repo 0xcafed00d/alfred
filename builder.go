@@ -2,6 +2,7 @@ package main
 
 import (
 	//"fmt"
+	"encoding/json"
 	"log"
 )
 
@@ -21,9 +22,16 @@ func (bq *BuildQueue) EnQueue(pkg string) {
 }
 
 type BuildInfo struct {
+	PkgName         string
+	GitHash         string
+	BuildOK         bool
+	TestOK          bool
+	CoverageOK      bool
+	CoveragePercent int
 }
 
 func buildPackage(pkg string) (binfo BuildInfo, err error) {
+	binfo.PkgName = pkg
 
 	log.Println("Processing Package:", pkg)
 	err = goget(pkg, "build.log", &binfo)
@@ -44,6 +52,15 @@ func builder(queue <-chan string) {
 		binfo, err := buildPackage(pkg)
 
 		if err == nil {
+			_, f, err := makePaths(pkg, "status.json")
+			defer f.Close()
+
+			enc := json.NewEncoder(f)
+			err = enc.Encode(&binfo)
+			if err != nil {
+				log.Println(" Failed to write json status file", err)
+			}
+
 			log.Println(" Done", binfo)
 		} else {
 			log.Println(" Error: ", err, binfo)
