@@ -18,20 +18,17 @@ func exitOnError(err error) {
 	}
 }
 
-func runCommand(cmd string, args []string) {
-	fmt.Println(cmd, args)
-}
-
-func main() {
+func getSecretKey() ([]byte, error) {
 	secretKey := []byte(os.Getenv("GITHUBSECRET"))
 	if len(secretKey) == 0 {
-		exitOnError(errors.New("GITHUBSECRET environment variable not set"))
+		return nil, errors.New("GITHUBSECRET environment variable not set")
 	}
+	return secretKey, nil
+}
 
-	if len(os.Args) > 1 {
-		runCommand(os.Args[1], os.Args[2:])
-		return
-	}
+func cmdServe(args []string) {
+	secretKey, err := getSecretKey()
+	exitOnError(err)
 
 	finfo, err := os.Stat("data")
 	if err == nil {
@@ -53,4 +50,23 @@ func main() {
 
 	http.HandleFunc("/githubnotify/", webhook.notify)
 	http.ListenAndServe(":8080", nil)
+}
+
+func cmdKick(args []string) {
+
+}
+
+func runCommand(cmd string, args []string) {
+	switch cmd {
+	case "serve":
+		cmdServe(args)
+	case "kick":
+		cmdKick(args)
+	}
+}
+
+func main() {
+	if len(os.Args) > 1 {
+		runCommand(os.Args[1], os.Args[2:])
+	}
 }
