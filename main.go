@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 )
@@ -53,7 +56,29 @@ func cmdServe(args []string) {
 }
 
 func cmdKick(args []string) {
+	payload := GitHubPayload{}
 
+	payload.Repository.URL = "https://github.com/simulatedsimian/alfred"
+
+	plbytes, err := json.Marshal(&payload)
+	exitOnError(err)
+
+	req, err := http.NewRequest("POST", "http://localhost:8080/githubnotify/",
+		bytes.NewBuffer(plbytes))
+	exitOnError(err)
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-GitHub-Event", "push")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	exitOnError(err)
+	defer resp.Body.Close()
+
+	fmt.Println("response Status:", resp.Status)
+	fmt.Println("response Headers:", resp.Header)
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
 }
 
 func runCommand(cmd string, args []string) {
