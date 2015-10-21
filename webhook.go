@@ -15,12 +15,16 @@ type GitHubWebHook struct {
 	queuer    BuildQueuer
 }
 
+func generateHMAC(data, key []byte) string {
+	mac := hmac.New(sha1.New, key)
+	mac.Write(data)
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
 func (wh *GitHubWebHook) verifyHMAC(w http.ResponseWriter, r *http.Request, body []byte) bool {
 	sig := r.Header.Get("X-Hub-Signature")
 
-	mac := hmac.New(sha1.New, wh.secretKey)
-	mac.Write(body)
-	expectedMAC := "sha1=" + hex.EncodeToString(mac.Sum(nil))
+	expectedMAC := "sha1=" + generateHMAC(body, wh.secretKey)
 	equal := hmac.Equal([]byte(sig), []byte(expectedMAC))
 
 	if !equal {

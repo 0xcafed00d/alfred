@@ -52,23 +52,34 @@ func cmdServe(args []string) {
 	}
 
 	http.HandleFunc("/githubnotify/", webhook.notify)
-	http.ListenAndServe(":8080", nil)
+	exitOnError(http.ListenAndServe(":8080", nil))
 }
 
 func cmdKick(args []string) {
+	if len(args) != 2 {
+		exitOnError(errors.New("Usage: alfred kick <go pkgname> <serverURL>"))
+	}
+
+	pkg := args[0]
+	url := args[1]
+
+	secretKey, err := getSecretKey()
+	exitOnError(err)
+
 	payload := GitHubPayload{}
 
-	payload.Repository.URL = "https://github.com/simulatedsimian/alfred"
+	payload.Repository.URL = "https://" + pkg
 
 	plbytes, err := json.Marshal(&payload)
 	exitOnError(err)
 
-	req, err := http.NewRequest("POST", "http://localhost:8080/githubnotify/",
+	req, err := http.NewRequest("POST", url+"/githubnotify/",
 		bytes.NewBuffer(plbytes))
 	exitOnError(err)
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-GitHub-Event", "push")
+	req.Header.Set("X-Hub-Signature", "sha1="+generateHMAC(plbytes, secretKey))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
