@@ -10,6 +10,8 @@ func runCommand(cmd string, args []string) {
 		cmdServe(args)
 	case "kick":
 		cmdKick(args)
+	case "ls":
+		cmdLs(args)
 	}
 }
 
