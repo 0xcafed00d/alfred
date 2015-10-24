@@ -30,17 +30,22 @@ type BuildInfo struct {
 	CoveragePercent int
 }
 
-func buildPackage(pkg string) (binfo BuildInfo, err error) {
+func buildPackage(pkg string) (binfo BuildInfo) {
 	binfo.PkgName = pkg
 
 	log.Println("Processing Package:", pkg)
-	err = goget(pkg, "build.log", &binfo)
+	err := goget(pkg, "build.log", &binfo)
+	if err != nil {
+		return
+	}
 
 	log.Println(" Running Tests on:", pkg)
 	err = gotest(pkg, "test.log", &binfo)
 
-	log.Println(" Processing Coverage on:", pkg)
-	err = gocover(pkg, "cover.log", &binfo)
+	if err == nil {
+		log.Println(" Processing Coverage on:", pkg)
+		gocover(pkg, "cover.log", &binfo)
+	}
 
 	return
 }
@@ -49,21 +54,17 @@ func builder(queue <-chan string) {
 	for {
 		pkg := <-queue
 
-		binfo, err := buildPackage(pkg)
+		binfo := buildPackage(pkg)
 
-		if err == nil {
-			_, f, err := makePaths(pkg, "status.json")
-			defer f.Close()
+		_, f, err := makePaths(pkg, "status.json")
+		defer f.Close()
 
-			enc := json.NewEncoder(f)
-			err = enc.Encode(&binfo)
-			if err != nil {
-				log.Println(" Failed to write json status file", err)
-			}
-
-			log.Println(" Done", binfo)
-		} else {
-			log.Println(" Error: ", err, binfo)
+		enc := json.NewEncoder(f)
+		err = enc.Encode(&binfo)
+		if err != nil {
+			log.Println(" Failed to write json status file", err)
 		}
+
+		log.Println(" Done", binfo)
 	}
 }

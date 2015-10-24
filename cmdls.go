@@ -8,6 +8,23 @@ import (
 	"path/filepath"
 )
 
+func boolOk(ok bool) string {
+	if ok {
+		return "OK    "
+	} else {
+		return "Failed"
+	}
+}
+
+func printBuildInfo(location string, binfo *BuildInfo) {
+	fmt.Printf("%s %s\n", location, binfo.PkgName)
+	fmt.Printf("Build: %s  Test: %s  Coverage: %s %d%%\n\n",
+		boolOk(binfo.BuildOK),
+		boolOk(binfo.TestOK),
+		boolOk(binfo.CoverageOK),
+		binfo.CoveragePercent)
+}
+
 func cmdLs(args []string) {
 	err := os.Chdir("data")
 	exitOnError(err)
@@ -17,16 +34,23 @@ func cmdLs(args []string) {
 
 	for _, v := range matches {
 		path := filepath.Join(v, "status.json")
+
 		f, err := os.Open(path)
-		if err == nil {
-			status, err := ioutil.ReadAll(f)
-			if err == nil {
-				binfo := BuildInfo{}
-				err = json.Unmarshal(status, &binfo)
-				if err == nil {
-					fmt.Println(binfo)
-				}
-			}
+		if err != nil {
+			continue
 		}
+
+		status, err := ioutil.ReadAll(f)
+		if err != nil {
+			continue
+		}
+
+		binfo := BuildInfo{}
+		err = json.Unmarshal(status, &binfo)
+		if err != nil {
+			continue
+		}
+
+		printBuildInfo(v, &binfo)
 	}
 }
