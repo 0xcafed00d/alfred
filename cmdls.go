@@ -25,6 +25,33 @@ func printBuildInfo(location string, binfo *BuildInfo) {
 		binfo.CoveragePercent)
 }
 
+func doLs() (binfos []BuildInfo) {
+	matches, err := filepath.Glob("*")
+	exitOnError(err)
+
+	for _, v := range matches {
+		path := filepath.Join(v, "status.json")
+
+		f, err := os.Open(path)
+		if err != nil {
+			continue
+		}
+
+		status, err := ioutil.ReadAll(f)
+		if err != nil {
+			continue
+		}
+
+		binfo := BuildInfo{}
+		err = json.Unmarshal(status, &binfo)
+		if err != nil {
+			continue
+		}
+		binfos = append(binfos, binfo)
+	}
+	return
+}
+
 func cmdLs(args []string) {
 	err := os.Chdir("data")
 	exitOnError(err)
