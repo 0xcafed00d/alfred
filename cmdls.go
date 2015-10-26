@@ -16,8 +16,8 @@ func boolOk(ok bool) string {
 	}
 }
 
-func printBuildInfo(location string, binfo *BuildInfo) {
-	fmt.Printf("%s %s\n", location, binfo.PkgName)
+func printBuildInfo(binfo *BuildInfo) {
+	fmt.Printf("%s %s\n", binfo.PkgHash, binfo.PkgName)
 	fmt.Printf("Build: %s  Test: %s  Coverage: %s %d%%\n\n",
 		boolOk(binfo.BuildOK),
 		boolOk(binfo.TestOK),
@@ -56,28 +56,9 @@ func cmdLs(args []string) {
 	err := os.Chdir("data")
 	exitOnError(err)
 
-	matches, err := filepath.Glob("*")
-	exitOnError(err)
+	buildInfos := doLs()
 
-	for _, v := range matches {
-		path := filepath.Join(v, "status.json")
-
-		f, err := os.Open(path)
-		if err != nil {
-			continue
-		}
-
-		status, err := ioutil.ReadAll(f)
-		if err != nil {
-			continue
-		}
-
-		binfo := BuildInfo{}
-		err = json.Unmarshal(status, &binfo)
-		if err != nil {
-			continue
-		}
-
-		printBuildInfo(v, &binfo)
+	for i := range buildInfos {
+		printBuildInfo(&buildInfos[i])
 	}
 }

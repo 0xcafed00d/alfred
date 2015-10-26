@@ -15,6 +15,7 @@ const buildsTemplateSrc = `
 		<table>
 			{{range .}}
   			<tr>
+  				<td>{{.PkgHash}}</td>
     			<td>{{.PkgName}}</td>
     			<td>{{.BuildOK}}</td>
     			<td>{{.TestOK}}</td>

@@ -23,6 +23,7 @@ func (bq *BuildQueue) EnQueue(pkg string) {
 
 type BuildInfo struct {
 	PkgName         string
+	PkgHash         string
 	GitHash         string
 	BuildOK         bool
 	TestOK          bool
@@ -32,6 +33,7 @@ type BuildInfo struct {
 
 func buildPackage(pkg string) (binfo BuildInfo) {
 	binfo.PkgName = pkg
+	binfo.PkgHash = generatePackageHash(pkg)
 
 	log.Println("Processing Package:", pkg)
 	err := goget(pkg, "build.log", &binfo)
