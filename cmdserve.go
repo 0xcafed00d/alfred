@@ -30,5 +30,6 @@ func cmdServe(args []string) {
 
 	http.HandleFunc("/githubnotify/", webhook.notify)
 	http.HandleFunc("/builds/", buildView)
+	http.HandleFunc("/log/", logView)
 	exitOnError(http.ListenAndServe(":8080", nil))
 }

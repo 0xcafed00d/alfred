@@ -17,9 +17,9 @@ const buildsTemplateSrc = `
   			<tr>
   				<td>{{.PkgHash}}</td>
     			<td>{{.PkgName}}</td>
-    			<td>{{.BuildOK}}</td>
-    			<td>{{.TestOK}}</td>
-    			<td>{{.CoverageOK}}</td>
+    			<td><a href="/log/?pkg={{.PkgHash}}&type=build">{{.BuildOK}}</a></td>
+    			<td><a href="/log/?pkg={{.PkgHash}}&type=test">{{.TestOK}}</td>
+    			<td><a href="/log/?pkg={{.PkgHash}}&type=cover">{{.CoverageOK}}</td>
     			<td>{{.CoveragePercent}}</td>
   			</tr>
   			{{end}}
