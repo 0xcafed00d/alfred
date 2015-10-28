@@ -22,7 +22,7 @@ const logTemplateSrc = `
 	</head>
 	<body>
 		<pre>
-			{{.LogBody}}
+{{.LogBody}}
 		</pre>
 	</body>
 </html>

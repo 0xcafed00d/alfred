@@ -18,9 +18,9 @@ const buildsTemplateSrc = `
   				<td>{{.PkgHash}}</td>
     			<td>{{.PkgName}}</td>
     			<td><a href="/log/?pkg={{.PkgHash}}&type=build">{{.BuildOK}}</a></td>
-    			<td><a href="/log/?pkg={{.PkgHash}}&type=test">{{.TestOK}}</td>
-    			<td><a href="/log/?pkg={{.PkgHash}}&type=cover">{{.CoverageOK}}</td>
-    			<td>{{.CoveragePercent}}</td>
+    			<td><a href="/log/?pkg={{.PkgHash}}&type=test">{{.TestOK}}</a></td>
+    			<td><a href="/log/?pkg={{.PkgHash}}&type=cover">{{.CoverageOK}}</a></td>
+    			<td><a href="/coverage/?pkg={{.PkgHash}}">{{.CoveragePercent}}</a></td>
   			</tr>
   			{{end}}
  		</table>
